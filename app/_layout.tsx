@@ -7,15 +7,32 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { Provider, useDispatch } from 'react-redux';
+import { store } from '../store';
+import { loadNotesFromStorage, loadCollectionsFromStorage } from '../utils/storage';
+import { setNotes } from '../store/slices/notesSlice';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function RootLayoutContent() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
+
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const loadNotes = async () => {
+      const savedNotes = await loadNotesFromStorage();
+      const savedCollections = await loadCollectionsFromStorage();
+      const payload = { notes: savedNotes, collections: savedCollections };
+      dispatch(setNotes(payload));
+    };
+    
+    loadNotes();
+  }, [dispatch]);
 
   useEffect(() => {
     if (loaded) {
@@ -35,5 +52,13 @@ export default function RootLayout() {
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <Provider store={store}>
+      <RootLayoutContent />
+    </Provider>
   );
 }
